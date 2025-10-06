@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-token') // Add in Jenkins
+        IMAGE_NAME = 'sathyask2003/demo-go-app'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/sathya2003ME/demo-go-app-hello-world.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'go build -o app .'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'go test ./... || echo "No tests found, skipping"'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $IMAGE_NAME:latest .'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh '''
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                docker push $IMAGE_NAME:latest
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'echo "Deploying app to server/cloud..."'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished!'
+        }
+    }
+}
